@@ -1,12 +1,5 @@
 package com.stripe.net;
 
-import com.stripe.Stripe;
-import com.stripe.exception.APIConnectionException;
-import com.stripe.exception.APIException;
-import com.stripe.exception.AuthenticationException;
-import com.stripe.exception.CardException;
-import com.stripe.exception.InvalidRequestException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +10,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.net.URLStreamHandler;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -30,6 +22,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+
+import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.commons.lang.StringUtils;
+
+import com.stripe.Stripe;
+import com.stripe.exception.APIConnectionException;
+import com.stripe.exception.APIException;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.CardException;
+import com.stripe.exception.InvalidRequestException;
 
 public class LiveStripeResponseGetter implements StripeResponseGetter {
 	private static final String DNS_CACHE_TTL_PROPERTY_NAME = "networkaddress.cache.ttl";
@@ -105,19 +107,19 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 				URLStreamHandler customHandler = constructor.newInstance();
 				stripeURL = new URL(null, url, customHandler);
 			} catch (ClassNotFoundException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (SecurityException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (NoSuchMethodException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (IllegalArgumentException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (InstantiationException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (IllegalAccessException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			} catch (InvocationTargetException e) {
-				throw new IOException(e);
+				throw new IOExceptionWithCause( e );
 			}
 		} else {
 			stripeURL = new URL(url);
@@ -168,7 +170,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 	}
 
 	private static String formatURL(String url, String query) {
-		if (query == null || query.isEmpty()) {
+		if( StringUtils.isEmpty( query ) ) {
 			return url;
 		} else {
 			// In some cases, URL can already contain a question mark (eg, upcoming invoice lines)
@@ -223,7 +225,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 		return conn;
 	}
 
-	static String createQuery(Map<String, Object> params)
+	public static String createQuery( Map< String, Object > params )
 			throws UnsupportedEncodingException, InvalidRequestException {
 		Map<String, String> flatParams = flattenParams(params);
 		StringBuilder queryStringBuffer = new StringBuilder();
@@ -378,7 +380,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 		}
 
 		String apiKey = options.getApiKey();
-		if (apiKey == null || apiKey.trim().isEmpty()) {
+		if( StringUtils.isBlank( apiKey ) ) {
 			throw new AuthenticationException(
 					"No API key provided. (HINT: set your API key using 'Stripe.apiKey = <API-KEY>'. "
 							+ "You can generate API keys from the Stripe web interface. "

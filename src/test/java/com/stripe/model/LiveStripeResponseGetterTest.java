@@ -1,11 +1,8 @@
-package com.stripe.net;
+package com.stripe.model;
 
-import com.stripe.exception.StripeException;
-import com.stripe.model.Account;
-import com.stripe.net.LiveStripeResponseGetter;
-import com.stripe.net.RequestOptions;
+import static org.junit.Assert.assertEquals;
+
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -15,8 +12,8 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import com.stripe.exception.StripeException;
+import com.stripe.net.LiveStripeResponseGetter;
 
 public class LiveStripeResponseGetterTest {
 	LiveStripeResponseGetter srg;

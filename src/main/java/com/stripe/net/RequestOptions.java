@@ -1,5 +1,7 @@
 package com.stripe.net;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.stripe.Stripe;
 
 public class RequestOptions {
@@ -148,7 +150,7 @@ public class RequestOptions {
 			return null;
 		}
 		String normalized = apiKey.trim();
-		if (normalized.isEmpty()) {
+		if( StringUtils.isEmpty( normalized ) ) {
 			throw new InvalidRequestOptionsException("Empty API key specified!");
 		}
 		return normalized;
@@ -160,7 +162,7 @@ public class RequestOptions {
 			return null;
 		}
 		String normalized = stripeVersion.trim();
-		if (normalized.isEmpty()) {
+		if( StringUtils.isEmpty( normalized ) ) {
 			throw new InvalidRequestOptionsException("Empty Stripe version specified!");
 		}
 		return normalized;
@@ -171,7 +173,7 @@ public class RequestOptions {
 			return null;
 		}
 		String normalized = idempotencyKey.trim();
-		if (normalized.isEmpty()) {
+		if( StringUtils.isEmpty( normalized ) ) {
 			throw new InvalidRequestOptionsException("Empty Idempotency Key Specified!");
 		}
 		if (normalized.length() > 255) {
@@ -185,7 +187,7 @@ public class RequestOptions {
 			return null;
 		}
 		String normalized = stripeAccount.trim();
-		if (normalized.isEmpty()) {
+		if( StringUtils.isEmpty( normalized ) ) {
 			throw new InvalidRequestOptionsException("Empty stripe account specified!");
 		}
 		return normalized;
