@@ -1,3 +1,58 @@
+=== 1.37.1 2015-10-07
+
+* DESCRIBE CHANGES HERE (try to use the same style, tense, etc. as the other entries) 
+
+=== 1.37.0 2015-09-14
+
+* Products, SKUs, and Orders -- https://stripe.com/relay
+
+=== 1.36.0 2015-09-11
+
+* Add support for new rate limiting responses.
+
+=== 1.35.0 2015-08-31
+
+* Add `bankAccount` to `Token`
+
+=== 1.34.0 2015-08-17
+
+* Added `retrieve`, `all`, `update`, `create` methods to `Refund`
+
+=== 1.33.0 2015-08-03
+
+* Added `retrieve`, `all`, `update` and `close` methods to `Dispute`
+* Added `delete` method to managed `Account`s
+
+=== 1.32.1 2015-07-24
+
+* Added `account` to `ApplicationFee`.
+
+=== 1.32.0 2015-07-06
+
+* Added `getRequestId` method to `StripeException`.
+
+=== 1.31.0 2015-06-01
+
+* `ConcretePaymentSource` and the `PaymentSource` interface have been combined into one `ExternalAccount` class
+* `PaymentSourceCollection` was renamed `ExternalAccountCollection`
+* `Account` now supports `getExternalAccounts`, which allows both `BankAccount` and `Card` attachment.
+* `BankAccount`s can now be deleted from `Customer`s (private beta feature) and `Account`s
+
+=== 1.30.0 2015-05-28
+
+* Add decline_code, charge to CardException
+
+=== 1.29.0 2015-05-21
+
+* Added tax percent field to subscriptions
+* Added tax and tax percent fields to invoices
+
+=== 1.28.0 2015-05-08
+
+* Added support for Alipay accounts
+* Added default source when type is unknown
+* Added support dynamicLast4 on Card for Apple Pay integrations
+
 === 1.27.1 2015-03-30
 * Charge objects now support status
 

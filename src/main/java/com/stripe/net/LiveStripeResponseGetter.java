@@ -1,5 +1,15 @@
 package com.stripe.net;
 
+import com.stripe.Stripe;
+import com.stripe.exception.APIConnectionException;
+import com.stripe.exception.APIException;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.RateLimitException;
+import com.stripe.exception.CardException;
+import com.stripe.exception.InvalidRequestException;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,14 +18,12 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLStreamHandler;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -42,6 +50,8 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 	 * environments.
 	 */
 	private static final String CUSTOM_URL_STREAM_HANDLER_PROPERTY_NAME = "com.stripe.net.customURLStreamHandler";
+
+	private static final SSLSocketFactory socketFactory = new StripeSSLSocketFactory();
 
 	public <T> T request(
 			APIResource.RequestMethod method,
@@ -124,49 +134,29 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 		} else {
 			stripeURL = new URL(url);
 		}
-		java.net.HttpURLConnection conn = (java.net.HttpURLConnection) stripeURL.openConnection();
+		HttpURLConnection conn;
+		if (Stripe.getConnectionProxy() != null) {
+			conn = (HttpURLConnection) stripeURL.openConnection(Stripe.getConnectionProxy());
+			Authenticator.setDefault(new Authenticator() {
+				@Override
+				protected PasswordAuthentication getPasswordAuthentication() {
+					return Stripe.getProxyCredential();
+				}
+			});
+		} else {
+			conn = (HttpURLConnection) stripeURL.openConnection();
+		}
 		conn.setConnectTimeout(30 * 1000);
 		conn.setReadTimeout(80 * 1000);
 		conn.setUseCaches(false);
 		for (Map.Entry<String, String> header : getHeaders(options).entrySet()) {
 			conn.setRequestProperty(header.getKey(), header.getValue());
 		}
+		if (conn instanceof HttpsURLConnection) {
+			((HttpsURLConnection) conn).setSSLSocketFactory(socketFactory);
+		}
 
 		return conn;
-	}
-
-	private static void throwInvalidCertificateException() throws APIConnectionException {
-		throw new APIConnectionException("Invalid server certificate. You tried to connect to a server that has a revoked SSL certificate, which means we cannot securely send data to that server. Please email support@stripe.com if you need help connecting to the correct API server.");
-	}
-
-	private static void checkSSLCert(java.net.HttpURLConnection hconn) throws IOException, APIConnectionException {
-		if (!Stripe.getVerifySSL() && !hconn.getURL().getHost().equals("api.stripe.com")) {
-			return;
-		}
-
-		javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) hconn;
-		conn.connect();
-
-		Certificate[] certs = conn.getServerCertificates();
-
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-
-			byte[] der = certs[0].getEncoded();
-			md.update(der);
-			byte[] digest = md.digest();
-
-			byte[] revokedCertDigest = {(byte) 0x05, (byte) 0xc0, (byte) 0xb3, (byte) 0x64, (byte) 0x36, (byte) 0x94, (byte) 0x47, (byte) 0x0a, (byte) 0x88, (byte) 0x8c, (byte) 0x6e, (byte) 0x7f, (byte) 0xeb, (byte) 0x5c, (byte) 0x9e, (byte) 0x24, (byte) 0xe8, (byte) 0x23, (byte) 0xdc, (byte) 0x53};
-
-			if (Arrays.equals(digest, revokedCertDigest)) {
-				throwInvalidCertificateException();
-			}
-
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		} catch (CertificateEncodingException e) {
-			throwInvalidCertificateException();
-		}
 	}
 
 	private static String formatURL(String url, String query) {
@@ -180,26 +170,22 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 	}
 
 	private static java.net.HttpURLConnection createGetConnection(
-			String url, String query, RequestOptions options) throws IOException, APIConnectionException {
+			String url, String query, RequestOptions options) throws IOException {
 		String getURL = formatURL(url, query);
 		java.net.HttpURLConnection conn = createStripeConnection(getURL, options);
 		conn.setRequestMethod("GET");
-
-		checkSSLCert(conn);
 
 		return conn;
 	}
 
 	private static java.net.HttpURLConnection createPostConnection(
-			String url, String query, RequestOptions options) throws IOException, APIConnectionException {
+			String url, String query, RequestOptions options) throws IOException {
 		java.net.HttpURLConnection conn = createStripeConnection(url, options);
 
 		conn.setDoOutput(true);
 		conn.setRequestMethod("POST");
 		conn.setRequestProperty("Content-Type", String.format(
 				"application/x-www-form-urlencoded;charset=%s", APIResource.CHARSET));
-
-		checkSSLCert(conn);
 
 		OutputStream output = null;
 		try {
@@ -214,13 +200,11 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 	}
 
 	private static java.net.HttpURLConnection createDeleteConnection(
-			String url, String query, RequestOptions options) throws IOException, APIConnectionException {
+			String url, String query, RequestOptions options) throws IOException {
 		String deleteUrl = formatURL(url, query);
 		java.net.HttpURLConnection conn = createStripeConnection(
 				deleteUrl, options);
 		conn.setRequestMethod("DELETE");
-
-		checkSSLCert(conn);
 
 		return conn;
 	}
@@ -269,7 +253,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 					throw new InvalidRequestException("You cannot set '"+key+"' to an empty string. "+
 										"We interpret empty strings as null in requests. "+
 										"You may set '"+key+"' to null to delete the property.",
-										key, null);
+										key, null, 0, null);
 			} else if (value == null) {
 				flatParams.put(key, "");
 			} else {
@@ -293,6 +277,10 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 		String code;
 
 		String param;
+
+		String decline_code;
+
+		String charge;
 	}
 
 	private static String getResponseBody(InputStream responseStream)
@@ -384,7 +372,8 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 			throw new AuthenticationException(
 					"No API key provided. (HINT: set your API key using 'Stripe.apiKey = <API-KEY>'. "
 							+ "You can generate API keys from the Stripe web interface. "
-							+ "See https://stripe.com/api for details or email support@stripe.com if you have questions.");
+							+ "See https://stripe.com/api for details or email support@stripe.com if you have questions.",
+					null, 0);
 		}
 
 		try {
@@ -405,8 +394,16 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 			}
 			int rCode = response.responseCode;
 			String rBody = response.responseBody;
+
+			String requestId = null;
+			Map<String, List<String>> headers = response.getResponseHeaders();
+			List<String> requestIdList = headers == null ? null : headers.get("Request-Id");
+			if (requestIdList != null && requestIdList.size() > 0) {
+				requestId = requestIdList.get(0);
+			}
+
 			if (rCode < 200 || rCode >= 300) {
-				handleAPIError(rBody, rCode);
+				handleAPIError(rBody, rCode, requestId);
 			}
 			return APIResource.GSON.fromJson(rBody, clazz);
 		} finally {
@@ -436,7 +433,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 			throw new InvalidRequestException("Unable to encode parameters to "
 					+ APIResource.CHARSET
 					+ ". Please contact support@stripe.com for assistance.",
-					null, e);
+					null, null, 0, e);
 		}
 
 		try {
@@ -464,7 +461,7 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 		if (method != APIResource.RequestMethod.POST) {
 			throw new InvalidRequestException(
 					"Multipart requests for HTTP methods other than POST "
-							+ "are currently not supported.", null, null);
+							+ "are currently not supported.", null, null, 0, null);
 		}
 
 		java.net.HttpURLConnection conn = null;
@@ -476,7 +473,6 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", String.format(
 					"multipart/form-data; boundary=%s", boundary));
-			checkSSLCert(conn);
 
 			MultipartProcessor multipartProcessor = null;
 			try {
@@ -491,16 +487,16 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 						File currentFile = (File) value;
 						if (!currentFile.exists()) {
 							throw new InvalidRequestException("File for key "
-									+ key + " must exist.", null, null);
+									+ key + " must exist.", null, null, 0, null);
 						} else if (!currentFile.isFile()) {
 							throw new InvalidRequestException("File for key "
 									+ key
 									+ " must be a file and not a directory.",
-									null, null);
+									null, null, 0, null);
 						} else if (!currentFile.canRead()) {
 							throw new InvalidRequestException(
 									"Must have read permissions on file for key "
-									+ key + ".", null, null);
+									+ key + ".", null, null, 0, null);
 						}
 						multipartProcessor.addFileField(key, currentFile);
 					} else {
@@ -545,22 +541,24 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 
 	}
 
-	private static void handleAPIError(String rBody, int rCode)
+	private static void handleAPIError(String rBody, int rCode, String requestId)
 			throws InvalidRequestException, AuthenticationException,
 			CardException, APIException {
 		LiveStripeResponseGetter.Error error = APIResource.GSON.fromJson(rBody,
 				LiveStripeResponseGetter.ErrorContainer.class).error;
 		switch (rCode) {
 		case 400:
-			throw new InvalidRequestException(error.message, error.param, null);
+			throw new InvalidRequestException(error.message, error.param, requestId, rCode, null);
 		case 404:
-			throw new InvalidRequestException(error.message, error.param, null);
+			throw new InvalidRequestException(error.message, error.param, requestId, rCode, null);
 		case 401:
-			throw new AuthenticationException(error.message);
+			throw new AuthenticationException(error.message, requestId, rCode);
 		case 402:
-			throw new CardException(error.message, error.code, error.param, null);
+			throw new CardException(error.message, requestId, error.code, error.param, error.decline_code, error.charge, rCode, null);
+		case 429:
+			throw new RateLimitException(error.message, error.param, requestId, rCode, null);
 		default:
-			throw new APIException(error.message, null);
+			throw new APIException(error.message, requestId, rCode, null);
 		}
 	}
 
@@ -646,25 +644,25 @@ public class LiveStripeResponseGetter implements StripeResponseGetter {
 					.getDeclaredMethod("getContent").invoke(response), APIResource.CHARSET);
 			return new StripeResponse(responseCode, body);
 		} catch (InvocationTargetException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (MalformedURLException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (NoSuchFieldException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (SecurityException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (NoSuchMethodException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (ClassNotFoundException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (IllegalArgumentException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (IllegalAccessException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (InstantiationException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		} catch (UnsupportedEncodingException e) {
-			throw new APIException(unknownErrorMessage, e);
+			throw new APIException(unknownErrorMessage, null, 0, e);
 		}
 	}
 }

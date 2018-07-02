@@ -5,22 +5,19 @@ import com.stripe.exception.APIException;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.CardException;
 import com.stripe.exception.InvalidRequestException;
-import com.stripe.net.APIResource;
 import com.stripe.net.RequestOptions;
 
 import java.util.Map;
 
-public class Card extends APIResource implements PaymentSource {
-	String id;
-	String object;
+public class Card extends ExternalAccount implements MetadataStore<Card> {
 	String status;
 	Integer expMonth;
 	Integer expYear;
 	String last4;
+	String dynamicLast4;
 	String country;
 	String type;
 	String name;
-	String customer;
 	String recipient;
 	String addressLine1;
 	String addressLine2;
@@ -34,6 +31,8 @@ public class Card extends APIResource implements PaymentSource {
 	String fingerprint;
 	String brand;
 	String funding;
+	String currency;
+	Map<String, String> metadata;
 
 	public Card update(Map<String, Object> params)
 			throws AuthenticationException, InvalidRequestException,
@@ -47,33 +46,34 @@ public class Card extends APIResource implements PaymentSource {
 			APIConnectionException, CardException, APIException {
 		return update(params, RequestOptions.builder().setApiKey(apiKey).build());
 	}
+
 	public Card update(Map<String, Object> params, RequestOptions options)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
 		return request(RequestMethod.POST, this.getInstanceURL(), params, Card.class, options);
 	}
 
-	public DeletedCard delete() throws AuthenticationException,
-			InvalidRequestException, APIConnectionException, CardException,
-			APIException {
+	public DeletedCard delete()
+			throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
 		return delete((RequestOptions) null);
 	}
 
 	@Deprecated
-	public DeletedCard delete(String apiKey) throws AuthenticationException,
-			InvalidRequestException, APIConnectionException, CardException,
-			APIException {
+	public DeletedCard delete(String apiKey)
+			throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
 		return delete(RequestOptions.builder().setApiKey(apiKey).build());
 	}
-	public DeletedCard delete(RequestOptions options) throws AuthenticationException,
-			InvalidRequestException, APIConnectionException, CardException,
-			APIException {
+
+	public DeletedCard delete(RequestOptions options)
+			throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
 		return request(RequestMethod.DELETE, this.getInstanceURL(), null, DeletedCard.class, options);
 	}
 
+	@Override
 	public String getInstanceURL() {
-		if (this.getCustomer() != null) {
-			return String.format("%s/%s/cards/%s", classURL(Customer.class), this.getCustomer(), this.getId());
+		String result = super.getInstanceURL();
+		if (result != null) {
+			return result;
 		} else if (this.getRecipient() != null) {
 			return String.format("%s/%s/cards/%s", classURL(Recipient.class), this.getRecipient(), this.getId());
 		} else {
@@ -81,46 +81,18 @@ public class Card extends APIResource implements PaymentSource {
 		}
 	}
 
-	public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getObject() {
-        return object;
-    }
-
-    public void setObject(String object) {
-        this.object = object;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-	public String getCustomer() {
-		return customer;
+	public String getStatus() {
+		return status;
 	}
-
-	public void setCustomer(String customer) {
-		this.customer = customer;
+	public void setStatus(String status) {
+		this.status = status;
 	}
-
 	public String getRecipient() {
 		return recipient;
 	}
-
 	public void setRecipient(String recipient) {
 		this.recipient = recipient;
 	}
-
 	public Integer getExpMonth() {
 		return expMonth;
 	}
@@ -138,6 +110,12 @@ public class Card extends APIResource implements PaymentSource {
 	}
 	public void setLast4(String last4) {
 		this.last4 = last4;
+	}
+	public String getDynamicLast4() {
+		return dynamicLast4;
+	}
+	public void setDynamicLast4(String dynamicLast4) {
+		this.dynamicLast4 = dynamicLast4;
 	}
 	public String getCountry() {
 		return country;
@@ -228,5 +206,17 @@ public class Card extends APIResource implements PaymentSource {
 	}
 	public void setFunding(String funding) {
 		this.funding = funding;
+	}
+	public Map<String, String> getMetadata() {
+		return metadata;
+	}
+	public void setMetadata(Map<String, String> metadata) {
+		this.metadata = metadata;
+	}
+	public String getCurrency() {
+		return currency;
+	}
+	public void setCurrency(String currency) {
+		this.currency = currency;
 	}
 }

@@ -24,11 +24,16 @@ public class Transfer extends APIResource implements MetadataStore<Transfer> {
 	Integer amount;
 	String currency;
 	List<String> otherTransfers;
+	@Deprecated
 	String recipient;
+	String destination;
+	String destinationPayment;
 	BankAccount account;
 	String balanceTransaction;
 	Map<String, String> metadata;
-  TransferReversalCollection reversals;
+	String failureCode;
+	String failureMessage;
+	TransferReversalCollection reversals;
 
 	public String getId() {
 		return id;
@@ -108,12 +113,30 @@ public class Transfer extends APIResource implements MetadataStore<Transfer> {
 		return currency;
 	}
 
+	@Deprecated
 	public String getRecipient() {
 		return recipient;
 	}
 
+	@Deprecated
 	public void setRecipient(String recipient) {
 		this.recipient = recipient;
+	}
+
+	public String getDestination() {
+		return destination;
+	}
+
+	public void setDestination(String destination) {
+		this.destination = destination;
+	}
+
+	public String getDestinationPayment() {
+		return destinationPayment;
+	}
+
+	public void setDestinationPayment(String destinationPayment) {
+		this.destinationPayment = destinationPayment;
 	}
 
 	public BankAccount getAccount() {
@@ -142,6 +165,22 @@ public class Transfer extends APIResource implements MetadataStore<Transfer> {
 
 	public void setBalanceTransaction(String balanceTransaction) {
 		this.balanceTransaction = balanceTransaction;
+	}
+
+	public String getFailureCode() {
+		return failureCode;
+	}
+
+	public void setFailureCode(String failureCode) {
+		this.failureCode = failureCode;
+	}
+
+	public String getFailureMessage() {
+		return failureMessage;
+	}
+
+	public void setFailureMessage(String failureMessage) {
+		this.failureMessage = failureMessage;
 	}
 
 	public Map<String, String> getMetadata() {

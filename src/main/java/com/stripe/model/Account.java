@@ -11,7 +11,7 @@ import com.stripe.net.RequestOptions;
 import java.util.List;
 import java.util.Map;
 
-public class Account extends APIResource {
+public class Account extends APIResource implements MetadataStore<Account> {
 	String id;
 	Boolean chargesEnabled;
 	Boolean detailsSubmitted;
@@ -25,6 +25,16 @@ public class Account extends APIResource {
 	String displayName;
 	Verification verification;
 	LegalEntity legalEntity;
+	Keys keys;
+	Map<String, String> metadata;
+	String businessName;
+	String businessUrl;
+	String businessLogo;
+	String supportPhone;
+	String supportUrl;
+	String supportEmail;
+	Boolean managed;
+	ExternalAccountCollection externalAccounts;
 
 	public String getId() {
 		return id;
@@ -78,6 +88,56 @@ public class Account extends APIResource {
 		return legalEntity;
 	}
 
+	public Keys getKeys()
+	{
+		return keys;
+	}
+
+	public Map<String, String> getMetadata()
+	{
+		return metadata;
+	}
+
+	public String getBusinessName()
+	{
+		return businessName;
+	}
+
+	public String getBusinessUrl()
+	{
+		return businessUrl;
+	}
+
+	public String getBusinessLogo()
+	{
+		return businessLogo;
+	}
+
+	public String getSupportPhone()
+	{
+		return supportPhone;
+	}
+
+	public String getSupportUrl()
+	{
+		return supportUrl;
+	}
+
+	public String getSupportEmail()
+	{
+		return supportEmail;
+	}
+
+	public Boolean getManaged()
+	{
+		return managed;
+	}
+
+	public ExternalAccountCollection getExternalAccounts()
+	{
+		return externalAccounts;
+	}
+
 	public static Account create(Map<String, Object> params)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
@@ -88,6 +148,18 @@ public class Account extends APIResource {
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
 		return request(RequestMethod.POST, classURL(Account.class), params, Account.class, options);
+	}
+
+	public static AccountCollection all(Map<String, Object> params)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return all(params, (RequestOptions) null);
+	}
+
+	public static AccountCollection all(Map<String, Object> params, RequestOptions options)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return request(RequestMethod.GET, classURL(Account.class), params, AccountCollection.class, options);
 	}
 
 	public static Account retrieve()
@@ -142,29 +214,16 @@ public class Account extends APIResource {
 		return request(RequestMethod.POST, instanceURL(Account.class, this.id), params, Account.class, options);
 	}
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
+	public DeletedAccount delete(Map<String, Object> params)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return delete(params, (RequestOptions) null);
+	}
 
-		Account account = (Account) o;
-		return equals(id, account.id) &&
-			equals(chargesEnabled, account.chargesEnabled) &&
-			equals(detailsSubmitted, account.detailsSubmitted) &&
-			equals(transfersEnabled, account.transfersEnabled) &&
-			equals(currenciesSupported, account.currenciesSupported) &&
-			equals(email, account.email) &&
-			equals(statementDescriptor, account.statementDescriptor) &&
-			equals(defaultCurrency, account.defaultCurrency) &&
-			equals(country, account.country) &&
-			equals(timezone, account.timezone) &&
-			equals(displayName, account.displayName) &&
-			equals(verification, account.verification) &&
-			equals(legalEntity, account.legalEntity);
+	public DeletedAccount delete(Map<String, Object> params, RequestOptions options)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return request(RequestMethod.DELETE, instanceURL(Account.class, this.id), params, DeletedAccount.class, options);
 	}
 
 	public static class Verification extends StripeObject {
@@ -180,6 +239,21 @@ public class Account extends APIResource {
 		}
 		public Boolean getContacted() {
 			return contacted;
+		}
+	}
+
+	public static class Keys extends StripeObject {
+		String secret;
+		String publishable;
+
+		public String getSecret()
+		{
+			return secret;
+		}
+
+		public String getPublishable()
+		{
+			return publishable;
 		}
 	}
 }

@@ -15,9 +15,12 @@ public class Token extends APIResource {
 	Long created;
 	String currency;
 	String id;
+	String email;
+	String clientIp;
 	Boolean livemode;
 	Boolean used;
 	Card card;
+	BankAccount bankAccount;
 
 	public Integer getAmount() {
 		return amount;
@@ -51,6 +54,22 @@ public class Token extends APIResource {
 		this.id = id;
 	}
 
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getClientIp() {
+		return clientIp;
+	}
+
+	public void setClientIp(String clientIp) {
+		this.clientIp = clientIp;
+	}
+
 	public Boolean getLivemode() {
 		return livemode;
 	}
@@ -73,6 +92,14 @@ public class Token extends APIResource {
 
 	public void setCard(Card card) {
 		this.card = card;
+	}
+
+	public BankAccount getBankAccount() {
+	  return bankAccount;
+	}
+
+	public void setBankAccount(BankAccount bankAccount) {
+	  this.bankAccount = bankAccount;
 	}
 
 	public static Token create(Map<String, Object> params)

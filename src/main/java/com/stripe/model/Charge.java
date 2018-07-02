@@ -17,6 +17,7 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 	String currency;
 	String id;
 	String status;
+	String applicationFee;
 	Boolean livemode;
 	Boolean paid;
 	Boolean refunded;
@@ -40,7 +41,9 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 	@Deprecated
 	String statementDescription;
 	ShippingDetails shipping;
-	PaymentSource source;
+	ExternalAccount source;
+	String transfer;
+	String destination;
 
 	public static final String FRAUD_DETAILS = "fraud_details";
 	FraudDetails fraudDetails;
@@ -60,11 +63,23 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public String getStatus() {
 		return status;
 	}
-	
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public String getApplicationFee() {
+		return applicationFee;
+	}
+
+	public void setApplicationFee(String applicationFee) {
+		this.applicationFee = applicationFee;
+	}
+
 	public Integer getAmount() {
 		return amount;
 	}
@@ -216,7 +231,7 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 	public ChargeRefundCollection getRefunds() {
 		// API versions 2014-05-19 and earlier render charge refunds as an array
 		// instead of an object, meaning there is no sublist URL.
-		if (refunds.getURL() == null) {
+		if (refunds != null && refunds.getURL() == null) {
 			refunds.setURL(String.format("/v1/charges/%s/refunds", getId()));
 		}
 		return refunds;
@@ -270,12 +285,28 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 		this.receiptEmail = receiptEmail;
 	}
 
-	public PaymentSource getSource() {
+	public ExternalAccount getSource() {
 		return source;
 	}
 
-	public void setSource(PaymentSource source) {
+	public void setSource(ExternalAccount source) {
 		this.source = source;
+	}
+
+	public String getTransfer() {
+		return transfer;
+	}
+
+	public void setTransfer(String transfer) {
+		this.transfer = transfer;
+	}
+
+	public String getDestination() {
+		return destination;
+	}
+
+	public void setDestination(String destination) {
+		this.destination = destination;
 	}
 
 	public static Charge create(Map<String, Object> params)
@@ -314,12 +345,14 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 		return this.capture(null, (RequestOptions) null);
 	}
 
+	@Deprecated
 	public Dispute updateDispute(Map<String, Object> params)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
 		return this.updateDispute(params, (RequestOptions) null);
 	}
 
+	@Deprecated
 	public Dispute closeDispute() throws AuthenticationException,
 			InvalidRequestException, APIConnectionException, CardException,
 			APIException {
@@ -442,6 +475,8 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 			APIConnectionException, CardException, APIException {
 		return updateDispute(params, RequestOptions.builder().setApiKey(apiKey).build());
 	}
+
+	@Deprecated
 	public Dispute updateDispute(Map<String, Object> params, RequestOptions options)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
@@ -454,6 +489,8 @@ public class Charge extends APIResource implements MetadataStore<Charge> {
 			APIConnectionException, CardException, APIException {
 		return closeDispute(RequestOptions.builder().setApiKey(apiKey).build());
 	}
+
+	@Deprecated
 	public Dispute closeDispute(RequestOptions options)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {

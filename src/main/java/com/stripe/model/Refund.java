@@ -17,12 +17,31 @@ public class Refund extends APIResource implements MetadataStore<Charge> {
 	String balanceTransaction;
 	String id;
 	String charge;
+	String reason;
 	Map<String, String> metadata;
 
 	public Refund update(Map<String, Object> params)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
 		return update(params, (RequestOptions) null);
+	}
+
+	public static Refund retrieve(String id)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return retrieve(id, (RequestOptions) null);
+	}
+
+	public static RefundCollection all(Map<String, Object> params)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return all(params, (RequestOptions) null);
+	}
+
+	public static Refund create(Map<String, Object> params)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return create(params, (RequestOptions) null);
 	}
 
 	@Deprecated
@@ -34,19 +53,35 @@ public class Refund extends APIResource implements MetadataStore<Charge> {
 	public Refund update(Map<String, Object> params, RequestOptions options)
 			throws AuthenticationException, InvalidRequestException,
 			APIConnectionException, CardException, APIException {
-		return request(RequestMethod.POST, this.getInstanceURL(), params, Refund.class, options);
+		return request(RequestMethod.POST, instanceURL(Refund.class, id), params, Refund.class, options);
 	}
 
-	public String getInstanceURL() {
-		if (this.charge != null) {
-			return String.format("%s/%s/refunds/%s", classURL(Charge.class), this.charge, this.getId());
-		}
-		return null;
+	public static Refund retrieve(String id, RequestOptions options)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return request(RequestMethod.GET, instanceURL(Refund.class, id), null, Refund.class, options);
+	}
+
+	public static RefundCollection all(Map<String, Object> params, RequestOptions options)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return request(RequestMethod.GET, classURL(Refund.class), params, RefundCollection.class, options);
+	}
+
+	public static Refund create(Map<String, Object> params, RequestOptions options)
+			throws AuthenticationException, InvalidRequestException,
+			APIConnectionException, CardException, APIException {
+		return request(RequestMethod.POST, classURL(Refund.class), params, Refund.class, options);
 	}
 
 	public String getId() {
 		return id;
 	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	public Integer getAmount() {
 		return amount;
 	}
@@ -82,5 +117,11 @@ public class Refund extends APIResource implements MetadataStore<Charge> {
 	}
 	public void setMetadata(Map<String, String> metadata) {
 		this.metadata = metadata;
+	}
+	public String getReason() {
+		return reason;
+	}
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
 }
